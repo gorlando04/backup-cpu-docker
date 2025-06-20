@@ -321,7 +321,7 @@ def main(args):
 
     df_gpu = None
 
-    file_name = 'real_core_sg.csv'
+    file_name = 'artificial_2_core_sg.csv'
 
     try:   
         df_gpu = pd.read_csv(file_name)

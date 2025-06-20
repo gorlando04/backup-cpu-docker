@@ -4,7 +4,8 @@ from core_sg import S_CoreSG
 
 from app_hdbscan import Approximate_HDBSCAN
 
-from eval import HAI,Evaluate
+from newick import loads
+from eval import HAI,Evaluate,linkage_to_newick,ted_parallel
 
 import numpy as np
 import pandas as pd
@@ -13,6 +14,11 @@ import hdbscan
 import sys
 import time
 
+
+import sys
+
+# Define o novo limite de recursão
+sys.setrecursionlimit(1000000000)
 
 np.random.seed(seed=int(time.time())) 
 
@@ -315,7 +321,7 @@ def main(args):
 
     df_gpu = None
 
-    file_name = 'artificial_core_sg.csv'
+    file_name = 'artificial_1_core_sg.csv'
 
     try:   
         df_gpu = pd.read_csv(file_name)
@@ -392,17 +398,15 @@ def main(args):
 
         info[f'ARI_Iter-{index}'] = ari
 
-#        Hier_exact = HAI(exact_linkage,N )
-#        Hier_exact.build_hierarchy()
+        tree_exact = linkage_to_newick(exact_linkage)
+        tree_app = linkage_to_newick(app_linkage)
 
-#        Hier_app =  HAI(app_linkage, N)
-#        Hier_app.build_hierarchy()
+        t1 = loads(tree_exact)[0]
+        t2 = loads(tree_app)[0]
 
-        #Calcula o HAI
-#       hai = eval.HAI_val(Hier_exact,Hier_app)
+        ted = ted_parallel(t1, t2)
 
-
-#        info[f'HAI_Iter-{index}'] = hai
+        info[f'TED_Iter-{index}'] = ted
         write_df(df_gpu,index_,info) 
 
 

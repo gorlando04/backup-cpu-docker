@@ -20,6 +20,8 @@ import time
 
 from threading import Thread
 
+from concurrent.futures import ThreadPoolExecutor
+
 
 
 
@@ -29,6 +31,78 @@ def intersect1d_searchsorted(A,B):
 
     idx[idx==len(B)] = 0
     return A[B[idx] == A][0]
+
+
+def linkage_to_newick(df):
+    """
+    Converte uma linkage tree em DataFrame para uma string no formato Newick de forma iterativa.
+    
+    Espera um DataFrame com colunas: 'parent', 'left_child', 'right_child'.
+    
+    Retorna:
+        str: Árvore em formato Newick.
+    """
+    # Dicionário para armazenar expressões Newick de cada nó
+    newick_parts = {}
+
+    # Ordena o DataFrame para garantir que filhos venham antes dos pais
+    df_sorted = df.sort_values(by="parent")
+
+    for _, row in df_sorted.iterrows():
+        parent = int(row['parent'])
+        left = int(row['left_child'])
+        right = int(row['right_child'])
+
+        # Obtém ou define as representações dos filhos
+        left_str = newick_parts.get(left, str(left))
+        right_str = newick_parts.get(right, str(right))
+
+        # Monta a subárvore do nó atual
+        newick_parts[parent] = f"({left_str},{right_str}){parent}"
+
+    # O último parent é a raiz
+    root = df['parent'].max()
+    return newick_parts[root] + ';'
+
+def ted_parallel(t1, t2, memo=None):
+
+    if memo is None:
+        memo = {}
+    key = (id(t1), id(t2))
+    if key in memo:
+        return memo[key]
+
+    cost_label = 0 if t1.name == t2.name else 1
+
+    children1 = getattr(t1, 'descendants', [])
+    children2 = getattr(t2, 'descendants', [])
+
+    # Se ambos são folhas
+    if not children1 and not children2:
+        memo[key] = cost_label
+        return cost_label
+
+    # Paraleliza comparação dos filhos
+    results = []
+    with ThreadPoolExecutor() as executor:
+        futures = []
+        # Para evitar erros se tem filhos em quantidades diferentes,
+        # compara até o menor tamanho
+        min_len = min(len(children1), len(children2))
+        for i in range(min_len):
+            futures.append(executor.submit(ted_parallel, children1[i], children2[i], memo))
+        for future in futures:
+            results.append(future.result())
+
+    cost_children = sum(results)
+
+    # Custos para filhos extras (inserções ou deleções)
+    cost_extra = abs(len(children1) - len(children2))
+
+    total_cost = cost_label + cost_children + cost_extra
+    memo[key] = total_cost
+    return total_cost
+
 
 
 # Vamos construir uma árvore binária, que armazene nossa hierarquia
