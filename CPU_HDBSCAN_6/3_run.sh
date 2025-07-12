@@ -8,12 +8,12 @@ repeat(){
 
         sleep 1
 
-    for name in   'gaussian-5-Overlap' #'beta'
+    for name in   'beta'
             do
 
-        for N in 40000 #5000 10000 15000 20000 30000 40000 
+        for N in 5000 10000 15000 20000 30000 40000 
             do
-		for dim in 50 100 200
+		for dim in 10 20 50 100 200
 		do
                 	for id in 1 2 3 4 5 6 7 8 9 10
                     	do
